@@ -1,20 +1,21 @@
 #define range(x,y) for(int x=0;x<y;x++)
 #include <stdio.h>
 #include <math.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_mixer.h>
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
 
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+
 // Select options here:
-//#define opcodeDEBUG
 #define FRAMETIME 2
-#define BOXSIZE 8
-#define ROM_FILEPATH "tetris.c8"
+#define BOXSIZE 12
+#define ROM_FILEPATH "c8games/PONG2"
 
 
 #ifdef DEBUG
+//#define opcodeDEBUG
 #define debug printf
 #else
 #define debug //
@@ -83,11 +84,16 @@ void loadRom(const char* path) {
 	for (int x=0; x<ROMsize; x++)
 		fscanf (ROM, "%c", &memory[0x200+x]);
 	fclose(ROM);
-	//for(int x=0;x<4096;x++) printf("%x ",memory[x]);
-	// Examples for printing hex values.
-	// printf("The first byte is %x\n",memory[512]);
-	// printf("The second byte is %x\n",memory[513]);
-	// cout << hex<<(int)byte;<<dec
+	/* Examples for printing hex values.
+	printf("The first byte is %x\n",memory[512]);
+	printf("The second byte is %x\n",memory[513]);
+	*/
+}
+
+void dumpStackMem() {
+    printf("StackMem Dump:\n");
+    range(x,16) printf("%x\n",stackMem[x]);
+    printf("Attempting to jump to position %x.\n",stackMem[sc]);
 }
 
 void runOpcode(uint16_t opcode) {
@@ -105,11 +111,8 @@ void runOpcode(uint16_t opcode) {
 		case 0x00ee:
 			opc("%04x: Return from subroutine.\n",opcode);
             sc++;
-            // printf("StackMem Dump:\n");
-            // range(x,16) printf("%x\n",stackMem[x]);
-            // printf("Attempting to jump to position %x.\n",stackMem[sc]);
+            // dumpStackMem();
             pc = stackMem[sc];
-            // printf("pc is now at %x.\n\n",pc);
             break;
         default:
 			opc("The opcode %04x is not implemented.\n",opcode);
@@ -210,7 +213,6 @@ void runOpcode(uint16_t opcode) {
 		break;
 	case 0xd:
 		// Draw sprt
-        //printf("Chk2 -- The opcode at position 206 is %04x.\n", memory[0x206]<<8|memory[0x207]);
 		debug("Attempting to draw to (%d, %d)...\n",reg[x1],reg[x2]);
 		debug("Reg Dump:\n");
         range(x,16) {
@@ -220,8 +222,6 @@ void runOpcode(uint16_t opcode) {
 		reg[0xf] = 0;
 		range (Y, x3) {
             //reg[x] = 0xF0 = 0b11110000
-            //printf("Chk3 -- The opcode at position 206 is %04x. Y is %x and reg[x3] is %x.\n", memory[0x206]<<8|memory[0x207],Y,reg[x3]);
-            //SDL_Delay(40);
             range (X, 8) {
                 bit = (memory[I+Y]>>(7-X)) & 1;
                 //if (reg[x2]+Y>31) printf("Overflow down!!!!!!!!!!!!\n");
@@ -233,7 +233,6 @@ void runOpcode(uint16_t opcode) {
             }
 		}
 		gfx_flag = 1;
-		//printf("Chk4 -- The opcode at position 206 is %04x.\n", memory[0x206]<<8|memory[0x207]);
 		break;
 	case 0xe:
         // Keyboard input
@@ -282,8 +281,6 @@ void runOpcode(uint16_t opcode) {
 			break;
 		case 0x18:
 			// Timer set
-			//printf("\n\n\nSOUND!\n\n\n\n");
-			//SDL_Delay(1000);
 			sound = reg[x1];
 			break;
 		case 0x1e:
@@ -355,7 +352,7 @@ int main(int argc, char* argv[])
     Mix_VolumeChunk(beep,3);
     Mix_PlayChannel(1,beep,0);
     debug("The sound has been initialized.\n");
-    /*
+    /* Key Testing Example
     char* test = mapToKeys[0x0];
     printf("the key to detect is %c\n",test);
     while(1) {
@@ -365,11 +362,11 @@ int main(int argc, char* argv[])
     printf("X pressed!\n");
 	return 0;
     */
-	//range(x,32) range(y,64) screen[x][y] = (x+y)%4?0:1;
+	// range(x,32) range(y,64) screen[x][y] = (x+y)%2?0:1;
 	for(int x=0;x<80;x++) memory[x] = hexChars[x];
     const char* path = ROM_FILEPATH;
     loadRom(path);
-    printf("Successfully loaded file %s.\n",path);
+    printf("Successfully loaded file %s.\n\nPress enter to quit.\n\n",path);
     uint16_t opcode;
     gfx_flag = 1;
 	while (pc<4096) {

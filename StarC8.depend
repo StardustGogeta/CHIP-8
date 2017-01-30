@@ -1,17 +1,10 @@
 # depslib dependency file v1.0
-1483331277 source:/home/stardustgogeta/Desktop/Test C/StarC8/main.cpp
+1485812920 source:/home/stardustgogeta/Github/Star-C8/main.c
 	<stdio.h>
 	<math.h>
-	<SDL2/SDL.h>
-	<string.h>
-	<stdbool.h>
-
-1483815541 source:/home/stardustgogeta/Desktop/Test C/StarC8/main.c
-	<stdio.h>
-	<math.h>
-	<SDL2/SDL.h>
-	<SDL2/SDL_mixer.h>
 	<string.h>
 	<stdbool.h>
 	<time.h>
+	<SDL2/SDL.h>
+	<SDL2/SDL_mixer.h>
 
