@@ -39,7 +39,6 @@
 			<Add library="SDL2" />
 			<Add library="SDL2_mixer" />
 		</Linker>
-		<Unit filename="cb.bmp" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>

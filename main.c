@@ -180,6 +180,6 @@ int main(int argc, char* argv[])
         SDL_Delay(FRAMETIME);
     }
     ending:
-    printf("Window successfully closed.");
+    printf("Window successfully closed.\n");
     return 0;
 }
