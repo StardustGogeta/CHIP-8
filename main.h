@@ -7,23 +7,22 @@
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
-#include <time.h>
+#include <stdarg.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
-#ifdef DEBUG
 //#define opcodeDEBUG
-#define debug printf
-#else
-#define debug //
-#endif // DEBUG
 
-uint16_t stackMem[16], delay, sound, pc, I, sc, BCD, newX, newY;
+void debug(const char *, ...), opc(const char *, ...), runOpcode(uint16_t);
+uint16_t stackMem[16], delay, sound, pc, I, sc, BCD, newX, newY, opcode, w;
 SDL_Event keyEvent;
-bool screen[32][64], gfx_flag, unpressed, bit;
-uint8_t memory[4096], reg[16], *keyState, hexChars[80];
+SDL_version compiled, linked;
+SDL_DisplayMode current;
+bool screen[32][64], gfx_flag, unpressed, bit, pause, fullscreen;
+uint8_t memory[4096], reg[16], *keyState, hexChars[80], mapFromKeys(const char *);
 const char* mapToKeys;
 char* key;
 

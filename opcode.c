@@ -1,15 +1,25 @@
 #include "main.h"
 
-#ifdef opcodeDEBUG
-#define opc printf
-#else
-#define opc //
-#endif // DEBUG
+void opc(const char *str, ...) {
+    #ifdef opcodeDEBUG
+    va_list l;
+    va_start(l, str);
+    vprintf(str, l);
+    #else
+    return;
+    #endif // DEBUG
+}
 
 void dumpStackMem() {
-    printf("StackMem Dump:\n");
-    range(x,16) printf("%x\n",stackMem[x]);
-    printf("Attempting to jump to position %x.\n",stackMem[sc]);
+    debug("StackMem Dump:\n");
+    range(x,16) debug("%x\n",stackMem[x]);
+    debug("Attempting to jump to position %x.\n",stackMem[sc]);
+}
+
+void dumpRegMem() {
+    debug("Reg Dump:\n");
+    range(x,16) debug("%x ",reg[x]);
+    debug("\n");
 }
 
 void runOpcode(uint16_t opcode) {
@@ -129,12 +139,8 @@ void runOpcode(uint16_t opcode) {
 		break;
 	case 0xd:
 		// Draw sprt
-		debug("Attempting to draw to (%d, %d)...\n",reg[x1],reg[x2]);
-		debug("Reg Dump:\n");
-        range(x,16) {
-            debug("%x ",reg[x]);
-        }
-        debug("\n");
+		// dumpRegMem();
+		opc("Attempting to draw to (%d, %d)...\n",reg[x1],reg[x2]);
 		reg[0xf] = 0;
 		range (Y, x3) {
             //reg[x] = 0xF0 = 0b11110000

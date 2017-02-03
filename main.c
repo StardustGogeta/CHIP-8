@@ -5,6 +5,16 @@
 #define BOXSIZE 12
 #define ROM_FILEPATH "c8games/PONG2"
 
+void debug(const char *str, ...) {
+    #ifdef DEBUG
+    va_list l;
+    va_start(l, str);
+    vprintf(str, l);
+    #else
+    return;
+    #endif // DEBUG
+}
+
 uint16_t pc=0x200, sc=15;
 const char* mapToKeys = "X123QWEASDZC4RFV";
 uint8_t hexChars[80] = {0xF0, 0x90, 0x90, 0x90, 0xF0,
@@ -25,8 +35,8 @@ uint8_t hexChars[80] = {0xF0, 0x90, 0x90, 0x90, 0xF0,
                 0xF0, 0x80, 0xF0, 0x80, 0x80};
 
 
-uint8_t mapFromKeys (char keyInput) {
-    switch (keyInput) {
+uint8_t mapFromKeys(const char * keyInput) {
+    switch ((char)keyInput) {
         case 'X': return 0x0;
         case '1': return 0x1;
         case '2': return 0x2;
@@ -44,7 +54,7 @@ uint8_t mapFromKeys (char keyInput) {
         case 'F': return 0xe;
         case 'V': return 0xf;
         default:
-            debug("\nFailed: %c\n",keyInput);
+            debug("\nFailed input: %c\n",keyInput);
             break;
     }
 }
@@ -64,8 +74,7 @@ void loadRom(const char* path) {
 	*/
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     /* Test keyboard to input translation, and back again:
     for (uint8_t x=0x0;x<0xf;x++) {
         printf("Original: %x, Chip-8: %c, Revert: %x\n",
@@ -75,10 +84,8 @@ int main(int argc, char* argv[])
 	debug("Program start.\n");
 	SDL_Init(SDL_INIT_EVERYTHING);
 	atexit(SDL_Quit);
-	uint8_t pixVal;
+	uint8_t pixVal, pixelSpace = 1;
 	const int pixelSize = BOXSIZE;
-	SDL_version compiled;
-	SDL_version linked;
 	SDL_VERSION(&compiled);
     debug("We compiled against SDL version %d.%d.%d ...\n",
        compiled.major, compiled.minor, compiled.patch);
@@ -88,8 +95,8 @@ int main(int argc, char* argv[])
 	SDL_Window* disp = SDL_CreateWindow("Stardust - Chip-8 Emulator",
 										SDL_WINDOWPOS_UNDEFINED,
 										SDL_WINDOWPOS_UNDEFINED,
-										64*pixelSize, 32*pixelSize, 0
-										// SDL_WINDOW_RESIZABLE
+										64*pixelSize, 32*pixelSize,
+										SDL_WINDOW_RESIZABLE
 										);
 	SDL_Renderer* renderer = SDL_CreateRenderer(disp, -1, SDL_RENDERER_ACCELERATED);
     SDL_Rect box; SDL_Event event;
@@ -124,8 +131,10 @@ int main(int argc, char* argv[])
         printf("Defaulting to %s.\n", path);
     }
     loadRom(path);
-    printf("Successfully loaded file %s.\n\nPress [ESC] to quit.\n\n",path);
-    uint16_t opcode;
+    printf("Successfully loaded file %s.\n\nPress [ESC] to quit.\n"
+        "Press [SPACE] to pause or [L] to enter fullscreen.\n"
+        "Press [K] to toggle space between pixels.\n\n",path);
+    SDL_ShowCursor(0);
     gfx_flag = 1;
 	while (pc<4096) {
 		while(SDL_PollEvent(&event)) {
@@ -133,53 +142,75 @@ int main(int argc, char* argv[])
                 case SDL_QUIT:
                     //pc = 4096;
                     goto ending;
-                    //break;
+                    break;
                 case SDL_KEYDOWN:
-                    if (event.key.keysym.sym == SDLK_ESCAPE) {
+                switch (event.key.keysym.sym) {
+                    case SDLK_ESCAPE:
                         //pc = 4096;
                         goto ending;
-                    }
-                    //break;
+                        break;
+                    case SDLK_SPACE:
+                        pause ^= 1;
+                        printf("The game has been %spaused.\n",pause?"":"un");
+                        break;
+                    case SDLK_l:
+                        fullscreen ^= 1;
+                        SDL_GetCurrentDisplayMode(0, &current);
+                        SDL_SetWindowFullscreen(disp,fullscreen?SDL_WINDOW_FULLSCREEN_DESKTOP:0);
+                        printf("The game has been set to %s.\n",fullscreen?"fullscreen":"windowed mode");
+                        w = 64*round(current.w/64);
+                        SDL_SetWindowSize(disp,w,w/2);
+                        gfx_flag = 1;
+                        break;
+                    case SDLK_k:
+                        pixelSpace ^= 1;
+                        break;
+                }
             }
-            /*switch (event.window.event)
+            switch (event.window.event)
             {
-            case SDL_WINDOWEVENT_RESIZED:
-			{
-				int w = 64*round(event.window.data1/64);
-				SDL_SetWindowSize(disp,w,w/2);
-				gfx_flag = 1;
-				break;
-			}
-            }*/
+                case SDL_WINDOWEVENT_MAXIMIZED:
+                case SDL_WINDOWEVENT_RESIZED:
+                {
+                    int w = 64*round(event.window.data1/64);
+                    SDL_SetWindowSize(disp,w,w/2);
+                    gfx_flag = 1;
+                    break;
+                }
+            }
         }
-		opcode = memory[pc]<<8|memory[pc+1];
-		debug("Attempting to run opcode %04x at position %04x\n", opcode, pc);
-		runOpcode(opcode);
-		pc += 2;
+        if (!pause) {
+            opcode = memory[pc]<<8|memory[pc+1];
+            debug("Attempting to run opcode %04x at position %04x\n", opcode, pc);
+            runOpcode(opcode);
+            pc += 2;
+            if (delay) {
+                delay --;
+            }
+            if (sound) {
+                sound --;
+                if (sound==10) Mix_PlayChannel(1,beep,0);
+            }
+            SDL_Delay(FRAMETIME);
+        }
         if (gfx_flag) {
-        	int w, h;
-        	SDL_GetWindowSize(disp,&w,&h);
-        	box.h = h/32-1, box.w = w/64-1;
-        	range(y,32) range(x,64) {
-				box.x = w/64 * x;
-				box.y = h/32 * y;
-				pixVal = screen[y][x]*255;
-				SDL_SetRenderDrawColor(renderer, pixVal, pixVal, pixVal,0);
-				SDL_RenderFillRect(renderer,&box);
-			}
-			SDL_RenderPresent(renderer);
-			gfx_flag = 0;
+            int w, h;
+            SDL_GetWindowSize(disp,&w,&h);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+            SDL_RenderClear(renderer);
+            box.h = h/32-pixelSpace, box.w = w/64-pixelSpace;
+            range(y,32) range(x,64) {
+                box.x = w/64 * x;
+                box.y = h/32 * y;
+                pixVal = screen[y][x]*255;
+                SDL_SetRenderDrawColor(renderer, pixVal, pixVal, pixVal,0);
+                SDL_RenderFillRect(renderer,&box);
+            }
+            SDL_RenderPresent(renderer);
+            gfx_flag = 0;
         }
-        if (delay) {
-            delay --;
-        }
-        if (sound) {
-            sound --;
-            if (sound==10) Mix_PlayChannel(1,beep,0);
-        }
-        SDL_Delay(FRAMETIME);
     }
     ending:
-    printf("Window successfully closed.\n");
+    printf("\nWindow successfully closed.\n");
     return 0;
 }
