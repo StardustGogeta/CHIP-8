@@ -2,6 +2,7 @@
 
 // Select options here:
 #define FRAMETIME 2
+#define OPS_REFRESH 5
 #define BOXSIZE 12
 #define ROM_FILEPATH "c8games/PONG2"
 
@@ -60,18 +61,18 @@ uint8_t mapFromKeys(const char * keyInput) {
 }
 
 void loadRom(const char* path) {
-	FILE* ROM = fopen(path,"rb");
-	fseek(ROM, 0, SEEK_END);
-	int ROMsize = ftell(ROM);
-	debug("The file size is %d bytes.\n", ROMsize);
-	rewind(ROM);
-	for (int x=0; x<ROMsize; x++)
-		fscanf (ROM, "%c", &memory[0x200+x]);
-	fclose(ROM);
-	/* Examples for printing hex values.
-	printf("The first byte is %x\n",memory[512]);
-	printf("The second byte is %x\n",memory[513]);
-	*/
+    FILE* ROM = fopen(path,"rb");
+    fseek(ROM, 0, SEEK_END);
+    int ROMsize = ftell(ROM);
+    debug("The file size is %d bytes.\n", ROMsize);
+    rewind(ROM);
+    for (int x=0; x<ROMsize; x++)
+        fscanf (ROM, "%c", &memory[0x200+x]);
+    fclose(ROM);
+    /* Examples for printing hex values.
+    printf("The first byte is %x\n",memory[512]);
+    printf("The second byte is %x\n",memory[513]);
+    */
 }
 
 int main(int argc, char* argv[]) {
@@ -81,25 +82,24 @@ int main(int argc, char* argv[]) {
                 x, mapToKeys[x], mapFromKeys(mapToKeys[x]));
     }
     */
-	debug("Program start.\n");
-	SDL_Init(SDL_INIT_EVERYTHING);
-	atexit(SDL_Quit);
-	uint8_t pixVal, pixelSpace = 1;
-	const int pixelSize = BOXSIZE;
-	SDL_VERSION(&compiled);
+    debug("Program start.\n");
+    SDL_Init(SDL_INIT_EVERYTHING);
+    atexit(SDL_Quit);
+    uint8_t pixelSpace = 1;
+    const int pixelSize = BOXSIZE;
+    SDL_VERSION(&compiled);
     debug("We compiled against SDL version %d.%d.%d ...\n",
        compiled.major, compiled.minor, compiled.patch);
-	SDL_GetVersion(&linked);
-	debug("But we are linking against SDL version %d.%d.%d.\n",
+    SDL_GetVersion(&linked);
+    debug("But we are linking against SDL version %d.%d.%d.\n",
        linked.major, linked.minor, linked.patch);
-	SDL_Window* disp = SDL_CreateWindow("Stardust - Chip-8 Emulator",
-										SDL_WINDOWPOS_UNDEFINED,
-										SDL_WINDOWPOS_UNDEFINED,
-										64*pixelSize, 32*pixelSize,
-										SDL_WINDOW_RESIZABLE
-										);
-	SDL_Renderer* renderer = SDL_CreateRenderer(disp, -1, SDL_RENDERER_ACCELERATED);
-    SDL_Rect box; SDL_Event event;
+    SDL_Window* disp = SDL_CreateWindow("Stardust - Chip-8 Emulator",
+                                        SDL_WINDOWPOS_UNDEFINED,
+                                        SDL_WINDOWPOS_UNDEFINED,
+                                        64*pixelSize, 32*pixelSize,
+                                        SDL_WINDOW_RESIZABLE
+                                        );
+    SDL_Renderer* renderer = SDL_CreateRenderer(disp, -1, SDL_RENDERER_ACCELERATED);
     keyState = SDL_GetKeyboardState(NULL);
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, 1024)==-1) {
         printf("%s",Mix_GetError());
@@ -117,10 +117,10 @@ int main(int argc, char* argv[]) {
         if (keyState[SDL_GetScancodeFromName(&test)]) break;
     }
     printf("X pressed!\n");
-	return 0;
+    return 0;
     */
-	// range(x,32) range(y,64) screen[x][y] = (x+y)%2?0:1;
-	for(int x=0;x<80;x++) memory[x] = hexChars[x];
+    // range(x,32) range(y,64) screen[x][y] = (x+y)%2?0:1;
+    for(int x=0;x<80;x++) memory[x] = hexChars[x];
     const char* path;
     if (argc > 1) {
         path = argv[1];
@@ -136,8 +136,16 @@ int main(int argc, char* argv[]) {
         "Press [K] to toggle space between pixels.\n\n",path);
     SDL_ShowCursor(0);
     gfx_flag = 1;
-	while (pc<4096) {
-		while(SDL_PollEvent(&event)) {
+    start = time(NULL);
+    while (pc<4096) {
+        OPS ++;
+        check = time(NULL);
+        if (check - start >= OPS_REFRESH) {
+            debug("Ops per second: %d\n",OPS/OPS_REFRESH);
+            start = time(NULL);
+            OPS = 0;
+        }
+        while(SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT:
                     //pc = 4096;
@@ -155,11 +163,8 @@ int main(int argc, char* argv[]) {
                         break;
                     case SDLK_l:
                         fullscreen ^= 1;
-                        SDL_GetCurrentDisplayMode(0, &current);
                         SDL_SetWindowFullscreen(disp,fullscreen?SDL_WINDOW_FULLSCREEN_DESKTOP:0);
                         printf("The game has been set to %s.\n",fullscreen?"fullscreen":"windowed mode");
-                        w = 64*round(current.w/64);
-                        SDL_SetWindowSize(disp,w,w/2);
                         gfx_flag = 1;
                         break;
                     case SDLK_k:
@@ -181,7 +186,7 @@ int main(int argc, char* argv[]) {
         }
         if (!pause) {
             opcode = memory[pc]<<8|memory[pc+1];
-            debug("Attempting to run opcode %04x at position %04x\n", opcode, pc);
+            opc("Attempting to run opcode %04x at position %04x\n", opcode, pc);
             runOpcode(opcode);
             pc += 2;
             if (delay) {
@@ -196,15 +201,14 @@ int main(int argc, char* argv[]) {
         if (gfx_flag) {
             int w, h;
             SDL_GetWindowSize(disp,&w,&h);
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+            SDL_SetRenderDrawColor(renderer, 0,0,0,0);
             SDL_RenderClear(renderer);
             box.h = h/32-pixelSpace, box.w = w/64-pixelSpace;
+            SDL_SetRenderDrawColor(renderer, 255,255,255,0);
             range(y,32) range(x,64) {
                 box.x = w/64 * x;
                 box.y = h/32 * y;
-                pixVal = screen[y][x]*255;
-                SDL_SetRenderDrawColor(renderer, pixVal, pixVal, pixVal,0);
-                SDL_RenderFillRect(renderer,&box);
+                if (screen[y][x]) SDL_RenderFillRect(renderer,&box);
             }
             SDL_RenderPresent(renderer);
             gfx_flag = 0;

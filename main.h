@@ -18,9 +18,12 @@
 
 void debug(const char *, ...), opc(const char *, ...), runOpcode(uint16_t);
 uint16_t stackMem[16], delay, sound, pc, I, sc, BCD, newX, newY, opcode, w;
-SDL_Event keyEvent;
+SDL_Rect box;
+SDL_Event event, keyEvent;
 SDL_version compiled, linked;
 SDL_DisplayMode current;
+time_t start, check;
+long OPS;
 bool screen[32][64], gfx_flag, unpressed, bit, pause, fullscreen;
 uint8_t memory[4096], reg[16], *keyState, hexChars[80], mapFromKeys(const char *);
 const char* mapToKeys;
