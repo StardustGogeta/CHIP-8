@@ -51,9 +51,6 @@ void loadRom(const char* path) {
 }
 
 int main(int argc, char* argv[]) {
-#ifdef WIN32
-    printf("test");
-    #endif
     /* Test keyboard to input translation, and back again:
     for (uint8_t x=0x0;x<0xf;x++) {
         printf("Original: %x, Chip-8: %c, Revert: %x\n",
