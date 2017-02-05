@@ -12,6 +12,7 @@ SDL_version compiled, linked;
 SDL_DisplayMode current;
 SDL_Window* disp;
 SDL_Renderer* renderer;
+
 Mix_Chunk *beep;
 
 uint8_t waitForKeypress();
