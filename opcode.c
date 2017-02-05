@@ -1,4 +1,5 @@
 #include "main.h"
+#include "display.h"
 
 void opc(const char *str, ...) {
     #ifdef opcodeDEBUG
@@ -143,11 +144,8 @@ void runOpcode(uint16_t opcode) {
         opc("Attempting to draw to (%d, %d)...\n",reg[x1],reg[x2]);
         reg[0xf] = 0;
         range (Y, x3) {
-            //reg[x] = 0xF0 = 0b11110000
             range (X, 8) {
                 bit = (memory[I+Y]>>(7-X)) & 1;
-                //if (reg[x2]+Y>31) printf("Overflow down!!!!!!!!!!!!\n");
-                //if (reg[x1]+X>63) printf("Overflow right!!!!!!!!!!!!\n");
                 newY = (reg[x2]+Y) % 32;
                 newX = (reg[x1]+X) % 64;
                 if (screen[newY][newX] & bit) reg[0xf] = 1;
@@ -158,24 +156,18 @@ void runOpcode(uint16_t opcode) {
         break;
     case 0xe:
         // Keyboard input
-        SDL_PumpEvents();
+        refreshKeyboard();
         key = mapToKeys[reg[x1]];
         switch (x2) {
             case 0x9:
                 // Conditional skip
                 opc("Trying to grab key %c with code %x.\n",key,reg[x1]);
-                if (keyState[SDL_GetScancodeFromName(&key)]) {
-                        pc += 2;
-                }
+                if (keyDown(key)) pc += 2;
                 break;
             case 0xa:
                 // Conditional skip
-                unpressed = 1;
                 opc("Trying to grab key %c with code %x.\n",key,reg[x1]);
-                if (keyState[SDL_GetScancodeFromName(&key)]) {
-                    unpressed = 0;
-                }
-                if (unpressed) pc += 2;
+                if (!keyDown(key)) pc += 2;
                 break;
         }
         break;
@@ -188,14 +180,7 @@ void runOpcode(uint16_t opcode) {
             break;
         case 0x0a:
             // Keypress
-            unpressed = 1;
-            while (unpressed) {
-                SDL_WaitEvent(&keyEvent);
-                while(SDL_PollEvent(&keyEvent)) if (keyEvent.type == SDL_KEYDOWN) {
-                    reg[x1] = mapFromKeys(SDL_GetKeyName(keyEvent.key.keysym.sym));
-                    unpressed = 0;
-                }
-            }
+            reg[x1] = waitForKeypress();
             break;
         case 0x15:
             // Timer set
@@ -220,7 +205,6 @@ void runOpcode(uint16_t opcode) {
             memory[I] = BCD/100;
             memory[I+1] = (BCD%100)/10;
             memory[I+2] = BCD%10;
-            //SDL_Delay(500);
             break;
 
         case 0x55:

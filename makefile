@@ -40,9 +40,9 @@ OBJDIR_RELEASE = obj/Release
 DEP_RELEASE = 
 OUT_RELEASE = bin/Release/StarC8
 
-OBJ_DEBUG = $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/opcode.o
+OBJ_DEBUG = $(OBJDIR_DEBUG)/display.o $(OBJDIR_DEBUG)/main.o $(OBJDIR_DEBUG)/opcode.o
 
-OBJ_RELEASE = $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/opcode.o
+OBJ_RELEASE = $(OBJDIR_RELEASE)/display.o $(OBJDIR_RELEASE)/main.o $(OBJDIR_RELEASE)/opcode.o
 
 all: debug release
 
@@ -58,6 +58,9 @@ debug: before_debug out_debug after_debug
 
 out_debug: before_debug $(OBJ_DEBUG) $(DEP_DEBUG)
 	$(LD) $(LIBDIR_DEBUG) -o $(OUT_DEBUG) $(OBJ_DEBUG)  $(LDFLAGS_DEBUG) $(LIB_DEBUG)
+
+$(OBJDIR_DEBUG)/display.o: display.c
+	$(CC) $(CFLAGS_DEBUG) $(INC_DEBUG) -c display.c -o $(OBJDIR_DEBUG)/display.o
 
 $(OBJDIR_DEBUG)/main.o: main.c
 	$(CC) $(CFLAGS_DEBUG) $(INC_DEBUG) -c main.c -o $(OBJDIR_DEBUG)/main.o
@@ -80,6 +83,9 @@ release: before_release out_release after_release
 
 out_release: before_release $(OBJ_RELEASE) $(DEP_RELEASE)
 	$(LD) $(LIBDIR_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE)  $(LDFLAGS_RELEASE) $(LIB_RELEASE)
+
+$(OBJDIR_RELEASE)/display.o: display.c
+	$(CC) $(CFLAGS_RELEASE) $(INC_RELEASE) -c display.c -o $(OBJDIR_RELEASE)/display.o
 
 $(OBJDIR_RELEASE)/main.o: main.c
 	$(CC) $(CFLAGS_RELEASE) $(INC_RELEASE) -c main.c -o $(OBJDIR_RELEASE)/main.o

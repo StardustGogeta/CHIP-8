@@ -39,6 +39,10 @@
 			<Add library="SDL2" />
 			<Add library="SDL2_mixer" />
 		</Linker>
+		<Unit filename="display.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="display.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
