@@ -47,11 +47,7 @@ void initializeAudio() {
 }
 
 void playBeep() {
-    #ifndef _WIN32
     Mix_PlayChannel(1,beep,0);
-    #else
-    return;
-    #endif // _WIN32
 }
 
 bool handleEvents() {

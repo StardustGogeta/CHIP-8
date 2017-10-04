@@ -2,7 +2,7 @@
 #include "display.h"
 
 // Select options here:
-#define FRAMETIME 0
+#define FRAMETIME 2
 #define OPS_REFRESH 1
 #define BOXSIZE 12
 #define ROM_FILEPATH "c8games/PONG2"
